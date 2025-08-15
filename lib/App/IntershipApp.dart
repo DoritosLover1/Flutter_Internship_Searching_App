@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
+import 'package:url_launcher/url_launcher.dart';
+import 'package:url_launcher/url_launcher_string.dart';
 
+import 'dart:convert';
 import '../SpecialWidgets/SpecialWidgets.dart';
 
 class IntershipApp extends StatefulWidget {
@@ -13,12 +17,51 @@ class IntershipApp extends StatefulWidget {
 class _IntershipAppState extends State<IntershipApp> {
   bool isSearchResults = false;
   bool isLoading = false;
-  List<String> searchResults = [];
+  List<Map<String, dynamic>> searchResults = [];
 
   final departmentController = TextEditingController();
   final countryController = TextEditingController();
   final cityController = TextEditingController();
   final languageController = TextEditingController();
+
+  
+Future<void> searchJobs() async {
+  final response = await http.get(
+    Uri.parse(
+      'https://jsearch.p.rapidapi.com/search?query=${departmentController.text}%20in%20${cityController.text},%20${countryController.text}&employment_types=INTERN&date_posted=month&num_pages=1',
+    ),
+    headers: {
+      'X-RapidAPI-Key': 'YOUR_RAPIDAPI_KEY_HERE',
+      'X-RapidAPI-Host': 'jsearch.p.rapidapi.com',
+    },
+  );
+
+  if (response.statusCode == 200) {
+    final data = jsonDecode(response.body);
+    final jobs = data['data'];
+
+    setState(() {
+      isLoading = false;
+      isSearchResults = true;
+      searchResults = List<Map<String, dynamic>>.from(jobs);  
+      });
+  } else {
+    setState(() {
+      isLoading = false;
+    });
+
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text('Error'),
+        content: Text('Could not fetch jobs. Status code: ${response.statusCode}'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: Text('OK')),
+        ],
+      ),
+    );
+  }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -60,9 +103,43 @@ class _IntershipAppState extends State<IntershipApp> {
                           margin: EdgeInsets.symmetric(horizontal: screenWidth * 0.05, vertical: screenHeight * 0.01),
                           elevation: 3,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                          child: ListTile(
-                            leading: Icon(Icons.work, color: Colors.blueAccent),
-                            title: Text(searchResults[index]),
+                          child: Theme (
+                            data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                            child: ExpansionTile(
+                            leading: Icon(Icons.work_rounded, color: Colors.blueAccent),
+                            title: buildResultExpansion(searchResults[index]['job_title'], screenWidth),
+                            subtitle: buildResultExpansion(searchResults[index]['job_title'], screenWidth * 0.85),
+                            children: [
+                              buildResultExpansion('Publisher: ${searchResults[index]['job_publisher']}', screenWidth),
+                              TextButton(
+                                onPressed: () async {
+                                  final link = searchResults[index]['job_apply_link'];
+
+                                  if (link == null || link.toString().isEmpty) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('Application link not found')),
+                                    );
+                                  return;
+                                  }
+
+                                  final success_url_link = link.toString();
+                                  final succes = await launchUrlString(success_url_link, mode: LaunchMode.externalApplication);
+                                  if (!succes) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('Application link not found')),
+                                    );
+                                  }
+                                },
+                                child: buildResultExpansion("Apply", screenWidth),
+                                style: TextButton.styleFrom(
+                                    backgroundColor: Colors.blueAccent,
+                                    foregroundColor: Color.fromARGB(232, 255, 255, 255),
+                                    textStyle: TextStyle(fontWeight: FontWeight.bold),
+                                  ),
+                              ),
+                              
+                            ]
+                          ),
                           ),
                         ),
                       ),
@@ -95,7 +172,7 @@ class _IntershipAppState extends State<IntershipApp> {
                         ),
                       ),
                     ),
-                    SizedBox(height: screenHeight * 0.01),
+                    SizedBox(height: screenHeight * 0.0045),
                   ],
                 )
               : Column(
@@ -117,11 +194,11 @@ class _IntershipAppState extends State<IntershipApp> {
                           SizedBox(height: screenHeight * 0.055),
                           buildLabel('Which department are you looking for an internship in?', screenWidth),
                           buildTextField(departmentController, Icons.business_rounded, screenWidth, screenHeight, 64),
-                          buildLabel('Which country are you looking for an internship in?', screenWidth),
+                          buildLabel('Which country are you looking for an internship in? (de,us,fr...)(Default = us)', screenWidth),
                           buildTextField(countryController, Icons.location_on_rounded, screenWidth, screenHeight, 57),
-                          buildLabel('Which city are you looking for an internship in?', screenWidth),
+                          buildLabel('Which city are you looking for an internship in?(Optional)', screenWidth),
                           buildTextField(cityController, Icons.location_city_rounded, screenWidth, screenHeight, 168),
-                          buildLabel('Which language are you looking for an internship in?', screenWidth),
+                          buildLabel('Which language are you looking for an internship in?(en,de,fr...)(Default = en)', screenWidth),
                           buildTextField(languageController, Icons.language_rounded, screenWidth, screenHeight, 46),
                         ],
                       ),
@@ -143,11 +220,8 @@ class _IntershipAppState extends State<IntershipApp> {
                             padding: EdgeInsets.symmetric(vertical: screenHeight * 0.02),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(35.0)),
                           ),
-                          onPressed: () {
-                            if (departmentController.text.isEmpty ||
-                                countryController.text.isEmpty ||
-                                cityController.text.isEmpty ||
-                                languageController.text.isEmpty) {
+                          onPressed: () async {
+                            if (departmentController.text.isEmpty) {
                               showDialog(
                                 context: context,
                                 builder: (BuildContext context) {
@@ -169,15 +243,11 @@ class _IntershipAppState extends State<IntershipApp> {
                                 isLoading = true;
                               });
 
-                              Future.delayed(Duration(seconds: 5), () {
-                                setState(() {
-                                  isLoading = false;
-                                  isSearchResults = true;
-                                  searchResults = [
-                                    'Internship 1 in ${departmentController.text}, ${countryController.text}, ${cityController.text}, ${languageController.text}',
-                                    'Internship 2 in ${departmentController.text}, ${countryController.text}, ${cityController.text}, ${languageController.text}',
-                                  ];
-                                });
+                              await searchJobs();
+
+                              setState(() {
+                                isLoading = false;
+                                isSearchResults = true;
                               });
                             }
                           },

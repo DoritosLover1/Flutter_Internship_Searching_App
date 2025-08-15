@@ -29,3 +29,10 @@ Widget buildLabel(String text, double screenWidth) {
       ),
     );
   }
+
+  Widget buildResultExpansion(String text, double screenWidth){
+    return Text(text,
+      style: TextStyle(fontSize: screenWidth * 0.035),
+      textAlign: TextAlign.center,
+    );
+  }
