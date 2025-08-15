@@ -15,6 +15,7 @@ class IntershipApp extends StatefulWidget {
 }
 
 class _IntershipAppState extends State<IntershipApp> {
+
   bool isSearchResults = false;
   bool isLoading = false;
   List<Map<String, dynamic>> searchResults = [];
@@ -24,44 +25,44 @@ class _IntershipAppState extends State<IntershipApp> {
   final cityController = TextEditingController();
   final languageController = TextEditingController();
 
-  
-Future<void> searchJobs() async {
-  final response = await http.get(
-    Uri.parse(
-      'https://jsearch.p.rapidapi.com/search?query=${departmentController.text}%20in%20${cityController.text},%20${countryController.text}&employment_types=INTERN&date_posted=month&num_pages=1',
-    ),
-    headers: {
-      'X-RapidAPI-Key': 'YOUR_RAPIDAPI_KEY_HERE',
-      'X-RapidAPI-Host': 'jsearch.p.rapidapi.com',
-    },
-  );
-
-  if (response.statusCode == 200) {
-    final data = jsonDecode(response.body);
-    final jobs = data['data'];
-
-    setState(() {
-      isLoading = false;
-      isSearchResults = true;
-      searchResults = List<Map<String, dynamic>>.from(jobs);  
-      });
-  } else {
-    setState(() {
-      isLoading = false;
-    });
-
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: Text('Error'),
-        content: Text('Could not fetch jobs. Status code: ${response.statusCode}'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: Text('OK')),
-        ],
+  Future<void> searchJobs() async {
+    final response = await http.get(
+      Uri.parse(
+        'https://jsearch.p.rapidapi.com/search?query=${departmentController.text}%20in%20${cityController.text},%20${countryController.text}&employment_types=INTERN&date_posted=month&num_pages=1',
       ),
+      headers: {
+        'X-RapidAPI-Key': 'YOUR_API_KEY_HERE',
+        'X-RapidAPI-Host': 'jsearch.p.rapidapi.com',
+      },
     );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      final jobs = data['data'];
+
+      setState(() {
+        isLoading = false;
+        isSearchResults = true;
+        searchResults = List<Map<String, dynamic>>.from(jobs);  
+        });
+
+    } else {
+      setState(() {
+        isLoading = false;
+      });
+
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: Text('Error'),
+          content: Text('Could not fetch jobs. Status code: ${response.statusCode}'),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: Text('OK')),
+          ],
+        ),
+      );
+    }
   }
-}
 
   @override
   Widget build(BuildContext context) {
@@ -72,6 +73,7 @@ Future<void> searchJobs() async {
       resizeToAvoidBottomInset: false,
       backgroundColor: Colors.white,
       appBar: AppBar(
+        scrolledUnderElevation: 0,
         backgroundColor: Colors.white,
         title: Center(
           child: Container(
@@ -122,8 +124,8 @@ Future<void> searchJobs() async {
                                   return;
                                   }
 
-                                  final success_url_link = link.toString();
-                                  final succes = await launchUrlString(success_url_link, mode: LaunchMode.externalApplication);
+                                  final successUrlLink = link.toString();
+                                  final succes = await launchUrlString(successUrlLink, mode: LaunchMode.externalApplication);
                                   if (!succes) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(content: Text('Application link not found')),
