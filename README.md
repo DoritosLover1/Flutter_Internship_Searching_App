@@ -98,9 +98,9 @@ flutter build ios --release
 ---
 
 ## 🧪 Screenshots
-<img width="800" height="600" alt="Screenshot_1755342879" src="https://github.com/user-attachments/assets/9315444c-e11c-4e53-a4c6-6e2b6e6e567f" />
-<img width="800" height="600"  alt="Screenshot_1755343009" src="https://github.com/user-attachments/assets/57a8dac0-dc91-4a31-a2b5-99dabbcf700f" />
-<img width="800" height="600"  alt="Screenshot_1755343018" src="https://github.com/user-attachments/assets/9e68777e-bfd4-457e-ade2-95c9b31b68b7" />
+<img width="600" height="800" alt="Screenshot_1755342879" src="https://github.com/user-attachments/assets/9315444c-e11c-4e53-a4c6-6e2b6e6e567f" />
+<img width="600" height="800"  alt="Screenshot_1755343009" src="https://github.com/user-attachments/assets/57a8dac0-dc91-4a31-a2b5-99dabbcf700f" />
+<img width="600" height="800"  alt="Screenshot_1755343018" src="https://github.com/user-attachments/assets/9e68777e-bfd4-457e-ade2-95c9b31b68b7" />
 
 ---
 
